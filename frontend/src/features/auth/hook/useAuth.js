@@ -1,17 +1,15 @@
 import { useDispatch, useSelector } from "react-redux";
-import {register, login, verifyEmail} from "../service/auth.api.js"
-    import { setUser, setLoading, setError } from "../auth.slice.js";
+import { register, login, verifyEmail } from "../service/auth.api.js";
+import { setUser, setLoading, setError } from "../auth.slice.js";
 
 export function useAuth() {
   const dispatch = useDispatch();
-  const { loading, error, user } = useSelector((state) => state.auth); // ye line add karo
-
-
+  const { loading, error, user } = useSelector((state) => state.auth);
 
   async function handleRegister({ username, email, password }) {
     try {
       dispatch(setLoading(true));
-      await register({ username, email, password }); // lowercase register - API function
+      await register({ username, email, password });
       return true;
     } catch (error) {
       dispatch(setError(error.message));
@@ -24,7 +22,7 @@ export function useAuth() {
   async function handleLogin({ email, password }) {
     try {
       dispatch(setLoading(true));
-      const data = await login({ email, password }); // lowercase login - API function
+      const data = await login({ email, password });
       dispatch(setUser(data.user));
       return true;
     } catch (error) {
@@ -48,5 +46,12 @@ export function useAuth() {
     }
   }
 
-  return { handleRegister, handleLogin, handleVerifyEmail, loading, error, user }; // ye return update karo
+  return {
+    handleRegister,
+    handleLogin,
+    handleVerifyEmail,
+    loading,
+    error,
+    user,
+  };
 }

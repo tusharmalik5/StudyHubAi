@@ -11,7 +11,7 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("clicked")
+    console.log("clicked");
     const success = await handleRegister({ email, username, password });
     if (success) {
       setIsRegistered(true);
@@ -22,7 +22,8 @@ export default function Register() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-center">
-          Registration successful! Please check your email to verify your account.
+          Registration successful! Please check your email to verify your
+          account.
         </p>
       </div>
     );

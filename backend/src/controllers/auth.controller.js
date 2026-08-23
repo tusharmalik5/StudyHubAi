@@ -42,8 +42,6 @@ export async function Register(req, res) {
   });
 }
 
-
-
 export async function Login(req, res) {
   const { email, password } = req.body;
 
@@ -57,14 +55,11 @@ export async function Login(req, res) {
     return res.status(401).json({ message: "Invalid credentials" });
   }
 
-  const token = jwt.sign(
-    { userId: user._id },
-    process.env.JWT_SECRET,
-    { expiresIn: "1d" }
-  );
+  const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+    expiresIn: "1d",
+  });
 
-      res.cookie("token", token)
-
+  res.cookie("token", token);
 
   return res.status(200).json({
     message: "Login successful",
@@ -76,7 +71,6 @@ export async function Login(req, res) {
     },
   });
 }
-
 
 export async function getMe(req, res) {
   const userId = req.user.userId;

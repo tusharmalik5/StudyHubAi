@@ -1,6 +1,6 @@
 ﻿import React, { useState } from "react";
 import { useAuth } from "../hook/useAuth";
-import {useNavigate} from "react-router"
+import { useNavigate } from "react-router";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -13,7 +13,7 @@ export default function Login() {
     e.preventDefault();
     const success = await handleLogin({ email, password });
     if (success) {
-      navigate("/"); // ya jo bhi tumhara main app page hoga login ke baad
+      navigate("/");
     }
   };
 

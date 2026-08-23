@@ -7,7 +7,7 @@ export default function VerifyEmail() {
   const navigate = useNavigate();
   const { handleVerifyEmail } = useAuth();
 
-  const [status, setStatus] = useState("verifying"); // verifying | success | error
+  const [status, setStatus] = useState("verifying");
 
   useEffect(() => {
     const token = searchParams.get("token");

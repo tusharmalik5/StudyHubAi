@@ -15,7 +15,7 @@ export async function sendMessage(req, res) {
     if (!chatId) {
       const title = await generateTitle(message);
       chat = await chatModel.create({
-        user: req.user.id,
+        user: req.user.userId,
         title,
       });
     } else {
@@ -31,7 +31,7 @@ export async function sendMessage(req, res) {
       role: "user",
     });
 
-    const allMessages = await messageModel.findById({ chat: chat._id });
+    const allMessages = await messageModel.find({ chat: chat._id });
 
     const result = await generateResponse(allMessages);
 
@@ -51,13 +51,12 @@ export async function sendMessage(req, res) {
   }
 }
 
-// 1. Saare chats ki list (sidebar ke liye)
 export async function getAllChats(req, res) {
   try {
     const chats = await chatModel
-      .find({ user: req.user.id })
+      .find({ user: req.user.userId })
       .select("title createdAt")
-      .sort({ createdAt: -1 }); // sabse naya chat sabse upar
+      .sort({ createdAt: -1 });
 
     return res.status(200).json({ chats });
   } catch (error) {
@@ -66,7 +65,6 @@ export async function getAllChats(req, res) {
   }
 }
 
-// 2. Ek specific chat ke saare messages
 export async function getChatById(req, res) {
   try {
     const { chatId } = req.params;
@@ -76,14 +74,13 @@ export async function getChatById(req, res) {
       return res.status(404).json({ message: "Chat not found" });
     }
 
-    // security check - sirf apni khud ki chat access kar sake
-    if (chat.user.toString() !== req.user.id) {
+    if (chat.user.toString() !== req.user.userId) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
     const messages = await messageModel
       .find({ chat: chatId })
-      .sort({ createdAt: 1 }); // purane se naye order me
+      .sort({ createdAt: 1 });
 
     return res.status(200).json({ chat, messages });
   } catch (error) {
@@ -92,7 +89,6 @@ export async function getChatById(req, res) {
   }
 }
 
-// 3. Chat delete karna
 export async function deleteChat(req, res) {
   try {
     const { chatId } = req.params;
@@ -102,13 +98,12 @@ export async function deleteChat(req, res) {
       return res.status(404).json({ message: "Chat not found" });
     }
 
-    // security check - sirf apni khud ki chat delete kar sake
-    if (chat.user.toString() !== req.user.id) {
+    if (chat.user.toString() !== req.user.userId) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
     await chatModel.findByIdAndDelete(chatId);
-    await messageModel.deleteMany({ chat: chatId }); // us chat ke saare messages bhi delete karo
+    await messageModel.deleteMany({ chat: chatId });
 
     return res.status(200).json({ message: "Chat deleted successfully" });
   } catch (error) {
