@@ -1,6 +1,13 @@
 import { generateResponse, generateTitle } from "../services/ai.service.js";
 import chatModel from "../models/chat.model.js";
 import messageModel from "../models/message.model.js";
+import { generateImage } from "../services/ai.service.js";
+
+function isImageRequest(message) {
+  const actionWords = /generate|create|draw|make|design/i;
+  const imageWords = /image|picture|photo|drawing|illustration/i;
+  return actionWords.test(message) && imageWords.test(message);
+}
 
 export async function sendMessage(req, res) {
   try {
@@ -25,21 +32,37 @@ export async function sendMessage(req, res) {
       }
     }
 
-    const userMessage = await messageModel.create({
+    await messageModel.create({
       chat: chat._id,
       content: message,
       role: "user",
     });
 
-    const allMessages = await messageModel.find({ chat: chat._id });
+    const wantsImage = isImageRequest(message);
+    let aiMessage;
 
-    const result = await generateResponse(allMessages);
+    if (wantsImage) {
+      const imageDataUrl = await generateImage(message);
 
-    const aiMessage = await messageModel.create({
-      chat: chat._id,
-      content: result,
-      role: "ai",
-    });
+      aiMessage = await messageModel.create({
+        chat: chat._id,
+        content: "Here is your generated image.",
+        role: "ai",
+        imageUrl: imageDataUrl, 
+      });
+    } else {
+      const allMessages = await messageModel
+        .find({ chat: chat._id })
+        .sort({ createdAt: 1 });
+
+      const result = await generateResponse(allMessages);
+
+      aiMessage = await messageModel.create({
+        chat: chat._id,
+        content: result,
+        role: "ai",
+      });
+    }
 
     return res.status(201).json({
       chat,
@@ -50,6 +73,7 @@ export async function sendMessage(req, res) {
     return res.status(500).json({ message: "Something went wrong" });
   }
 }
+
 
 export async function getAllChats(req, res) {
   try {

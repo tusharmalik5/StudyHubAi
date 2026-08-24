@@ -107,52 +107,58 @@ export default function Dashboard() {
           </div>
         </header>
 
-        <section
-          aria-live="polite"
-          className="flex flex-1 flex-col gap-4 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-        >
-          {messages.length === 0 && (
-            <div className="flex flex-1 items-center justify-center text-slate-400 text-sm">
-              Ask me anything about your studies to get started.
-            </div>
-          )}
+     <section
+  aria-live="polite"
+  className="flex flex-1 flex-col gap-4 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+>
+  {messages.length === 0 && (
+    <div className="flex flex-1 items-center justify-center text-slate-400 text-sm">
+      Ask me anything about your studies to get started.
+    </div>
+  )}
 
-          {messages.map((message, index) => (
-            <div
-              key={message._id || index}
-              className={`flex ${
-                message.role === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
-              <div
-                className={[
-                  "max-w-[75%] rounded-2xl px-4 py-3 text-[15px] leading-relaxed shadow-sm",
-                  message.role === "user"
-                    ? "bg-blue-600 text-white"
-                    : "border border-slate-200 bg-slate-50 text-slate-800",
-                ].join(" ")}
-              >
-                {message.role === "user" ? (
-                  message.content
-                ) : (
-                  <div className="prose prose-sm max-w-none">
-                    <ReactMarkdown>{message.content}</ReactMarkdown>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
+  {messages.map((message, index) => (
+    <div
+      key={message._id || index}
+      className={`flex ${
+        message.role === "user" ? "justify-end" : "justify-start"
+      }`}
+    >
+      <div
+        className={[
+          "max-w-[75%] rounded-2xl px-4 py-3 text-[15px] leading-relaxed shadow-sm",
+          message.role === "user"
+            ? "bg-blue-600 text-white"
+            : "border border-slate-200 bg-slate-50 text-slate-800",
+        ].join(" ")}
+      >
+        {message.imageUrl ? (
+          <img
+            src={message.imageUrl}
+            alt="Generated"
+            className="rounded-lg max-w-full"
+          />
+        ) : message.role === "user" ? (
+          message.content
+        ) : (
+          <div className="prose prose-sm max-w-none">
+            <ReactMarkdown>{message.content}</ReactMarkdown>
+          </div>
+        )}
+      </div>
+    </div>
+  ))}
 
-          {loading && (
-            <div className="flex justify-start">
-              <div className="max-w-[75%] rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-400">
-                Thinking...
-              </div>
-            </div>
-          )}
+  {loading && (
+    <div className="flex justify-start">
+      <div className="max-w-[75%] rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-400">
+        Thinking...
+      </div>
+    </div>
+  )}
 
-          <div ref={messagesEndRef} />
-        </section>
+  <div ref={messagesEndRef} />
+</section>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
           <div className="flex items-end gap-3">

@@ -10,6 +10,10 @@ const messageSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    imageUrl: {
+  type: String,
+  required: false, 
+},
     role: {
         type: String,
         enum: ["user", "ai"],
