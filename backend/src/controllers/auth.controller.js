@@ -89,6 +89,23 @@ export async function getMe(req, res) {
   });
 }
 
+
+
+export async function Logout(req, res) {
+  try {
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: false, 
+      sameSite: "lax",
+    });
+
+    return res.status(200).json({ message: "Logged out successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+}
+
 export async function verifyEmail(req, res) {
   const { token } = req.query;
 

@@ -22,6 +22,15 @@ export async function login({ email, password }) {
   }
 }
 
+export async function logout() {
+  try {
+    const response = await api.post("/api/auth/logout");
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: "Something went wrong" };
+  }
+}
+
 export async function verifyEmail(token) {
   try {
     const response = await api.get(`/api/auth/verify-email?token=${token}`);
@@ -30,5 +39,18 @@ export async function verifyEmail(token) {
     throw error.response.data;
   }
 }
+
+
+
+
+export async function getMe() {
+  try {
+    const response = await api.get("/api/auth/get-me");
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: "Something went wrong" };
+  }
+}
+
 
 export default api;

@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
-import { register, login, verifyEmail } from "../service/auth.api.js";
-import { setUser, setLoading, setError } from "../auth.slice.js";
+import { register, login, verifyEmail, logout, getMe} from "../service/auth.api.js";
+import { setUser, setLoading, setError, clearUser } from "../auth.slice.js";
 
 export function useAuth() {
   const dispatch = useDispatch();
@@ -33,6 +33,20 @@ export function useAuth() {
     }
   }
 
+  async function handleLogout() {
+  try {
+    dispatch(setLoading(true));
+    await logout(); 
+    dispatch(clearUser()); 
+    return true;
+  } catch (error) {
+    dispatch(setError(error.message));
+    return false;
+  } finally {
+    dispatch(setLoading(false));
+  }
+}
+
   async function handleVerifyEmail(token) {
     try {
       dispatch(setLoading(true));
@@ -46,10 +60,25 @@ export function useAuth() {
     }
   }
 
+async function checkAuth() {
+  try {
+    dispatch(setLoading(true));
+    const data = await getMe();
+    
+    dispatch(setUser(data.user));
+  } catch (error) {
+    dispatch(clearUser());
+  } finally {
+    dispatch(setLoading(false));
+  }
+}
+
   return {
     handleRegister,
     handleLogin,
     handleVerifyEmail,
+    handleLogout,
+    checkAuth,
     loading,
     error,
     user,

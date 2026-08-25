@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useChat } from "../hook/useChat.js";
 import ReactMarkdown from "react-markdown";
+import { useAuth } from "../../auth/hook/useAuth.js";
+import { useNavigate } from "react-router";
 
 export default function Dashboard() {
   const {
@@ -14,6 +16,9 @@ export default function Dashboard() {
     handleDeleteChat,
     handleStartNewChat,
   } = useChat();
+
+  const { user, handleLogout } = useAuth();
+  const navigate = useNavigate();
 
   const [input, setInput] = useState("");
   const messagesEndRef = useRef(null);
@@ -44,6 +49,15 @@ export default function Dashboard() {
 
   function startNewChat() {
     handleStartNewChat();
+  }
+
+  async function onAuthClick() {
+    if (user) {
+      const success = await handleLogout();
+      if (success) navigate("/login");
+    } else {
+      navigate("/login");
+    }
   }
 
   const isFreshChat = !currentChatId && messages.length === 0;
@@ -102,11 +116,14 @@ export default function Dashboard() {
         </div>
 
         <div className="p-3 border-t border-[#3a372f]">
-          <button className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#c9c6bd] hover:bg-[#2b2924] transition">
+          <button
+            onClick={onAuthClick}
+            className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#c9c6bd] hover:bg-[#2b2924] transition"
+          >
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#c96442] text-xs font-semibold text-white">
-              U
+              {user ? user.username?.[0]?.toUpperCase() : "U"}
             </span>
-            Login
+            {user ? user.username : "Login"}
           </button>
         </div>
       </aside>
