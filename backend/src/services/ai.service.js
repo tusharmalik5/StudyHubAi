@@ -1,28 +1,20 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { Modality } from "@google/genai"; 
 import {
   HumanMessage,
   SystemMessage,
   AIMessage,
 } from "@langchain/core/messages";
 import { TavilySearch } from "@langchain/tavily";
-import { createAgent, tool } from "langchain";
+import { createAgent } from "langchain";
 import { ChatMistralAI } from "@langchain/mistralai";
-import * as z from "zod";
 
 const Mistralmodel = new ChatMistralAI({
   model: "mistral-small-latest",
   apiKey: process.env.MISTRAL_AI,
 });
 
-const Imagemodel = new ChatGoogleGenerativeAI({
-  model: "gemini-3.1-flash-image", 
-  apiKey: process.env.GOOGLE_GEMINI,
-  responseModalities: [Modality.IMAGE], 
-});
-
 const Geminimodel = new ChatGoogleGenerativeAI({
-  model: "gemini-3.5-flash-lite",
+  model: "gemini-3.5-flash-lite", 
   apiKey: process.env.GOOGLE_GEMINI,
 });
 
@@ -31,52 +23,15 @@ const searchTool = new TavilySearch({
   tavilyApiKey: process.env.TAVILY_API_KEY,
 });
 
-function extractImageBase64(response) {
-  const imageBlock = response.content.find(
-    (block) =>
-      typeof block === "object" &&
-      block !== null &&
-      "image_url" in block
-  );
-
-  if (!imageBlock) return null;
-
-  return imageBlock.image_url.url.split(",")[1]; 
-}
-
 export async function generateImage(prompt) {
-  const response = await Imagemodel.invoke(prompt);
-  const imageBase64 = extractImageBase64(response);
-
-  if (!imageBase64) {
-    throw new Error("Image generation failed");
-  }
-
-  return `data:image/png;base64,${imageBase64}`; 
+  const encodedPrompt = encodeURIComponent(prompt);
+  const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=768&height=768&nologo=true`;
+  return imageUrl;
 }
-
-const imageGenTool = tool(
-  async ({ prompt }) => {
-    try {
-      const imageDataUrl = await generateImage(prompt);
-      return imageDataUrl;
-    } catch (error) {
-      return "Image generation failed";
-    }
-  },
-  {
-    name: "generate_image",
-    description:
-      "Generate an image based on a text description. Use this whenever the user asks to create, draw, generate, or make an image or picture.",
-    schema: z.object({
-      prompt: z.string().describe("Description of the image to generate"),
-    }),
-  }
-);
 
 const agent = createAgent({
   model: Geminimodel,
-  tools: [searchTool, imageGenTool],
+  tools: [searchTool], 
 });
 
 export async function generateResponse(messages) {
