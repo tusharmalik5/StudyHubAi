@@ -19,6 +19,13 @@ const chatSlice = createSlice({
     addMessage: (state, action) => {
       state.messages.push(action.payload);
     },
+    addMessageChunk: (state, action) => {
+  const lastMessage = state.messages[state.messages.length - 1];
+
+  if (lastMessage && lastMessage.role === "ai") {
+    lastMessage.content += action.payload;
+  }
+},
     setCurrentChatId: (state, action) => {
       state.currentChatId = action.payload;
     },
@@ -45,6 +52,7 @@ export const {
   setChats,
   setMessages,
   addMessage,
+  addMessageChunk,
   setCurrentChatId,
   addNewChat,
   removeChat,

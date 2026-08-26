@@ -33,19 +33,29 @@ const agent = createAgent({
   model: Geminimodel,
   tools: [searchTool], 
 });
-
-export async function generateResponse(messages) {
+export async function* generateResponse(messages) {
   const formattedMessages = messages.map((msg) =>
     msg.role === "user"
       ? new HumanMessage(msg.content)
       : new AIMessage(msg.content)
   );
-  const result = await agent.invoke({
-    messages: formattedMessages,
-  });
 
-  const lastMessage = result.messages[result.messages.length - 1];
-  return lastMessage.content;
+  const stream = await agent.stream(
+    {
+      messages: formattedMessages,
+    },
+    {
+      streamMode: "messages",
+    }
+  );
+
+  for await (const [messageChunk, metadata] of stream) {
+    const content = messageChunk.content;
+
+    if (typeof content === "string" && content) {
+      yield content;
+    }
+  }
 }
 
 export async function generateTitle(message) {

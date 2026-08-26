@@ -14,21 +14,27 @@ export async function sendMessage(req, res) {
     const { message, chatId } = req.body;
 
     if (!message) {
-      return res.status(400).json({ message: "Message is required" });
+      return res.status(400).json({
+        message: "Message is required",
+      });
     }
 
     let chat;
 
     if (!chatId) {
       const title = await generateTitle(message);
+
       chat = await chatModel.create({
         user: req.user.userId,
         title,
       });
     } else {
       chat = await chatModel.findById(chatId);
+
       if (!chat) {
-        return res.status(404).json({ message: "Chat not found" });
+        return res.status(404).json({
+          message: "Chat not found",
+        });
       }
     }
 
@@ -39,41 +45,80 @@ export async function sendMessage(req, res) {
     });
 
     const wantsImage = isImageRequest(message);
-    let aiMessage;
 
     if (wantsImage) {
       const imageDataUrl = await generateImage(message);
 
-      aiMessage = await messageModel.create({
+      const aiMessage = await messageModel.create({
         chat: chat._id,
         content: "Here is your generated image.",
         role: "ai",
-        imageUrl: imageDataUrl, 
+        imageUrl: imageDataUrl,
       });
-    } else {
-      const allMessages = await messageModel
-        .find({ chat: chat._id })
-        .sort({ createdAt: 1 });
 
-      const result = await generateResponse(allMessages);
-
-      aiMessage = await messageModel.create({
-        chat: chat._id,
-        content: result,
-        role: "ai",
+      return res.status(201).json({
+        chat,
+        aiMessage,
       });
     }
 
-    return res.status(201).json({
-      chat,
-      aiMessage,
+    // Streaming response
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    // IMPORTANT:
+    // frontend ko chat ki information pehle bhejo
+    res.write(
+      `event: chat\ndata: ${JSON.stringify({
+        chat,
+      })}\n\n`
+    );
+
+    const allMessages = await messageModel
+      .find({ chat: chat._id })
+      .sort({ createdAt: 1 });
+
+    const stream = generateResponse(allMessages);
+
+    let fullResponse = "";
+
+    for await (const chunk of stream) {
+      fullResponse += chunk;
+
+      res.write(
+        `event: chunk\ndata: ${JSON.stringify({
+          content: chunk,
+        })}\n\n`
+      );
+    }
+
+    const aiMessage = await messageModel.create({
+      chat: chat._id,
+      content: fullResponse,
+      role: "ai",
     });
+
+    // Tell frontend streaming is complete
+    res.write(
+      `event: done\ndata: ${JSON.stringify({
+        aiMessage,
+      })}\n\n`
+    );
+
+    res.end();
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Something went wrong" });
+
+    if (!res.headersSent) {
+      return res.status(500).json({
+        message: "Something went wrong",
+      });
+    }
+
+    res.end();
   }
 }
-
 
 export async function getAllChats(req, res) {
   try {
