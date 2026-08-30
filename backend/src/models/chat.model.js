@@ -5,12 +5,17 @@ const chatSchema = new mongoose.Schema({
         type: String,
         default: "New Chat"
     },
-    user:{
+    user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true
+    },
+    pdf: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Pdf",
+        default: null
     }
-},{timestamps: true});
+}, { timestamps: true });
 
 const chatModel = mongoose.model("Chat", chatSchema);
 export default chatModel;

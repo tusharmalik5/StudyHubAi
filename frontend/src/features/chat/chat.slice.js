@@ -5,6 +5,9 @@ const chatSlice = createSlice({
   initialState: {
     chats: [],
     currentChatId: null,
+     currentChatPdf: null,
+       currentChatPdfName: null,  
+    pdfUploadStatus: "idle",
     messages: [],
     loading: false,
     error: null,
@@ -29,6 +32,15 @@ const chatSlice = createSlice({
     setCurrentChatId: (state, action) => {
       state.currentChatId = action.payload;
     },
+     setCurrentChatPdf: (state, action) => {
+      state.currentChatPdf = action.payload;
+    },
+    setPdfUploadStatus: (state, action) => {
+      state.pdfUploadStatus = action.payload;
+    },
+     setCurrentChatPdfName: (state, action) => {
+    state.currentChatPdfName = action.payload;
+  },
     addNewChat: (state, action) => {
       state.chats.unshift(action.payload);
     },
@@ -44,6 +56,10 @@ const chatSlice = createSlice({
     startNewChat: (state) => {
       state.messages = [];
       state.currentChatId = null;
+
+        state.currentChatPdf = null; 
+         state.currentChatPdfName = null;      
+      state.pdfUploadStatus = "idle";
     },
   },
 });
@@ -54,6 +70,10 @@ export const {
   addMessage,
   addMessageChunk,
   setCurrentChatId,
+  setCurrentChatPdf,
+  setPdfUploadStatus,
+    setCurrentChatPdfName,
+
   addNewChat,
   removeChat,
   setLoading,

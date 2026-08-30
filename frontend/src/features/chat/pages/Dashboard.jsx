@@ -10,12 +10,16 @@ export default function Dashboard() {
     chats,
     messages,
     currentChatId,
+    currentChatPdf,
+    currentChatPdfName,
+    pdfUploadStatus,
     loading,
     fetchChats,
     fetchChatById,
     handleSendMessage,
     handleDeleteChat,
     handleStartNewChat,
+    handleUploadPdf,
   } = useChat();
 
   const { user, handleLogout } = useAuth();
@@ -23,6 +27,7 @@ export default function Dashboard() {
 
   const [input, setInput] = useState("");
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Sidebar resize
   const [sidebarWidth, setSidebarWidth] = useState(260);
@@ -189,6 +194,24 @@ export default function Dashboard() {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   }
 
+  function triggerFileUpload() {
+    fileInputRef.current?.click();
+  }
+
+  async function onFileSelected(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      alert("Sirf PDF files allowed hain");
+      e.target.value = "";
+      return;
+    }
+
+    await handleUploadPdf(file);
+    e.target.value = "";
+  }
+
   const isFreshChat = !currentChatId && messages.length === 0;
 
   // Mic button component (reuse)
@@ -224,12 +247,91 @@ export default function Dashboard() {
     </button>
   );
 
+  // PDF upload button (reuse)
+  const PdfButton = () => (
+    <button
+      onClick={triggerFileUpload}
+      disabled={pdfUploadStatus === "uploading"}
+      className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full transition-all duration-200 ${
+        isDark
+          ? "text-[#858178] hover:bg-[#2a2823] hover:text-white"
+          : "text-[#6b6560] hover:bg-[#eae7e1] hover:text-[#1a1915]"
+      }`}
+      title="Upload PDF"
+    >
+      {pdfUploadStatus === "uploading" ? (
+        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="9" strokeOpacity="0.25" />
+          <path d="M21 12a9 9 0 0 0-9-9" />
+        </svg>
+      ) : (
+        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21.44 11.05 12.25 20.24a5.5 5.5 0 0 1-7.78-7.78L13.46 3.28a3.5 3.5 0 1 1 4.95 4.95L9.42 17.22a1.5 1.5 0 0 1-2.12-2.12l8.49-8.49" />
+        </svg>
+      )}
+    </button>
+  );
+
+  // PDF attachment chip — shown inside the input box, above the textarea
+  const PdfChip = () => {
+    if (pdfUploadStatus === "uploading") {
+      return (
+        <div
+          className={`flex items-center gap-2 mx-2 mt-2 mb-1 px-3 py-1.5 rounded-lg text-[12.5px] w-fit ${
+            isDark ? "bg-[#2a2823] text-[#c9c6bd]" : "bg-[#f3f0ea] text-[#6b6560]"
+          }`}
+        >
+          <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="9" strokeOpacity="0.25" />
+            <path d="M21 12a9 9 0 0 0-9-9" />
+          </svg>
+          Uploading PDF...
+        </div>
+      );
+    }
+
+    if (currentChatPdf && currentChatPdfName) {
+      return (
+        <div
+          className={`flex items-center gap-2 mx-2 mt-2 mb-1 px-3 py-1.5 rounded-lg text-[12.5px] w-fit ${
+            isDark ? "bg-[#2a2823] text-[#c9c6bd]" : "bg-[#f3f0ea] text-[#6b6560]"
+          }`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <path d="M14 2v6h6" />
+          </svg>
+          <span className="truncate max-w-[200px]">{currentChatPdfName}</span>
+        </div>
+      );
+    }
+
+    if (pdfUploadStatus === "failed") {
+      return (
+        <div className="mx-2 mt-2 mb-1 px-3 py-1.5 rounded-lg text-[12.5px] w-fit text-red-400 bg-red-500/10">
+          PDF upload fail ho gaya, dobara try karo
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div
       className={`flex h-screen font-sans antialiased transition-colors duration-300 ${
         isDark ? "bg-[#141311] text-[#e8e6e1]" : "bg-[#f7f5f0] text-[#1a1915]"
       }`}
     >
+      {/* Hidden file input for PDF upload */}
+      <input
+        type="file"
+        accept="application/pdf"
+        ref={fileInputRef}
+        onChange={onFileSelected}
+        className="hidden"
+      />
+
       {/* ── Sidebar ── */}
       <aside
         style={{ width: `${sidebarWidth}px` }}
@@ -393,6 +495,7 @@ export default function Dashboard() {
                   ? "border-[#2e2c27] bg-[#1c1b18] shadow-black/20 focus-within:border-[#3a372f]"
                   : "border-[#e0dbd3] bg-white shadow-black/5 focus-within:border-[#c96442]/40"
               }`}>
+                <PdfChip />
                 <textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -406,7 +509,10 @@ export default function Dashboard() {
                   }`}
                 />
                 <div className="flex items-center justify-between px-2 pb-2">
-                  <MicButton />
+                  <div className="flex items-center gap-1">
+                    <PdfButton />
+                    <MicButton />
+                  </div>
                   <button
                     onClick={onSend}
                     disabled={loading || !input.trim()}
@@ -484,32 +590,36 @@ export default function Dashboard() {
 
             {/* Input bar */}
             <div className="px-6 pb-6 pt-1">
-              <div className={`mx-auto w-full max-w-3xl rounded-2xl border p-1.5 shadow-lg transition-colors ${
-                isDark
-                  ? "border-[#2e2c27] bg-[#1c1b18] shadow-black/15 focus-within:border-[#3a372f]"
-                  : "border-[#e0dbd3] bg-white shadow-black/5 focus-within:border-[#c96442]/40"
-              }`}>
-                <div className="flex items-end gap-2">
-                  <MicButton />
-                  <textarea
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={isListening ? "Listening..." : "Type your message..."}
-                    rows={1}
-                    className={`flex-1 resize-none bg-transparent px-2 py-2.5 text-[15px] focus:outline-none leading-relaxed max-h-32 ${
-                      isDark
-                        ? "text-[#e8e6e1] placeholder:text-[#5c584e]"
-                        : "text-[#1a1915] placeholder:text-[#a39e94]"
-                    }`}
-                  />
-                  <button
-                    onClick={onSend}
-                    disabled={loading || !input.trim()}
-                    className="mb-1 mr-1 rounded-xl bg-[#c96442] px-4 py-2 text-[13.5px] font-medium text-white transition-all duration-200 hover:bg-[#b8582f] disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97] shadow-md shadow-[#c96442]/20"
-                  >
-                    Send
-                  </button>
+              <div className="mx-auto w-full max-w-3xl">
+                <div className={`rounded-2xl border p-1.5 shadow-lg transition-colors ${
+                  isDark
+                    ? "border-[#2e2c27] bg-[#1c1b18] shadow-black/15 focus-within:border-[#3a372f]"
+                    : "border-[#e0dbd3] bg-white shadow-black/5 focus-within:border-[#c96442]/40"
+                }`}>
+                  <PdfChip />
+                  <div className="flex items-end gap-2">
+                    <PdfButton />
+                    <MicButton />
+                    <textarea
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder={isListening ? "Listening..." : "Type your message..."}
+                      rows={1}
+                      className={`flex-1 resize-none bg-transparent px-2 py-2.5 text-[15px] focus:outline-none leading-relaxed max-h-32 ${
+                        isDark
+                          ? "text-[#e8e6e1] placeholder:text-[#5c584e]"
+                          : "text-[#1a1915] placeholder:text-[#a39e94]"
+                      }`}
+                    />
+                    <button
+                      onClick={onSend}
+                      disabled={loading || !input.trim()}
+                      className="mb-1 mr-1 rounded-xl bg-[#c96442] px-4 py-2 text-[13.5px] font-medium text-white transition-all duration-200 hover:bg-[#b8582f] disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97] shadow-md shadow-[#c96442]/20"
+                    >
+                      Send
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -67,6 +67,16 @@ export async function sendMessage({ message, chatId, onChat, onChunk, onDone }) 
     }
   }
 }
+
+export async function createEmptyChat() {
+  try {
+    const response = await api.post("/api/chats/create");
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: "Something went wrong" };
+  }
+}
+
 export async function getAllChats() {
   try {
     const response = await api.get("/api/chats");
@@ -88,6 +98,28 @@ export async function getChatById(chatId) {
 export async function deleteChat(chatId) {
   try {
     const response = await api.delete(`/api/chats/${chatId}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: "Something went wrong" };
+  }
+}
+
+
+export async function uploadPdf(chatId, file) {
+  try {
+    const formData = new FormData();
+    formData.append("pdf", file);
+
+    const response = await api.post(
+      `/api/chats/${chatId}/upload-pdf`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
     return response.data;
   } catch (error) {
     throw error.response?.data || { message: "Something went wrong" };

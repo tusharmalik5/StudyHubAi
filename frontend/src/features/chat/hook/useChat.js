@@ -6,6 +6,8 @@ import {
   getChatById,
   sendMessage,
   deleteChat,
+  uploadPdf,
+  createEmptyChat
 } from "../service/chat.api.js";
 
 import {
@@ -13,18 +15,21 @@ import {
   setMessages,
   addMessage,
   setCurrentChatId,
+  setCurrentChatPdf,
+  setPdfUploadStatus,
   addNewChat,
   removeChat,
   setLoading,
   setError,
   startNewChat,
   addMessageChunk,
+  setCurrentChatPdfName
 } from "../chat.slice.js";
 
 export function useChat() {
   const dispatch = useDispatch();
 
-  const { chats, messages, currentChatId, loading, error } = useSelector(
+  const { chats, messages, currentChatId, currentChatPdf, currentChatPdfName, pdfUploadStatus, loading, error } = useSelector(
     (state) => state.chat
   );
 
@@ -82,12 +87,50 @@ export function useChat() {
 
       dispatch(setMessages(data.messages));
       dispatch(setCurrentChatId(chatId));
+          dispatch(setCurrentChatPdf(data.chat?.pdf || null)); // ye line add karo
+           dispatch(setCurrentChatPdfName(data.chat?.pdf?.fileName || null));   // naya
+
     } catch (err) {
       dispatch(setError(err.message));
     } finally {
       dispatch(setLoading(false));
     }
   }
+
+
+  // =========================
+// UPLOAD PDF
+// =========================
+
+async function handleUploadPdf(file) {
+  try {
+    dispatch(setPdfUploadStatus("uploading"));
+
+    let chatIdToUse = currentChatId;
+
+    // Agar abhi koi chat select nahi hai (fresh screen), pehle empty chat banao
+    if (!chatIdToUse) {
+      const chatData = await createEmptyChat();
+      chatIdToUse = chatData.chat._id;
+
+      dispatch(addNewChat(chatData.chat));
+      dispatch(setCurrentChatId(chatIdToUse));
+    }
+
+    const data = await uploadPdf(chatIdToUse, file);
+
+    dispatch(setCurrentChatPdf(data.pdf._id));
+        dispatch(setCurrentChatPdfName(data.pdf.fileName));   // naya
+
+    dispatch(setPdfUploadStatus("ready"));
+
+    return true;
+  } catch (err) {
+    dispatch(setPdfUploadStatus("failed"));
+    dispatch(setError(err.message));
+    return false;
+  }
+}
 
   // =========================
   // SEND MESSAGE
@@ -193,16 +236,20 @@ export function useChat() {
     dispatch(startNewChat());
   }
 
-  return {
-    chats,
-    messages,
-    currentChatId,
-    loading,
-    error,
-    fetchChats,
-    fetchChatById,
-    handleSendMessage,
-    handleDeleteChat,
-    handleStartNewChat,
-  };
+ return {
+  chats,
+  messages,
+  currentChatId,
+  currentChatPdf,
+  pdfUploadStatus,
+  loading,
+  error,
+  fetchChats,
+  fetchChatById,
+  handleUploadPdf,
+  handleSendMessage,
+  handleDeleteChat,
+  handleStartNewChat,
+  currentChatPdfName
+};
 }
